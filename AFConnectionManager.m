@@ -9,6 +9,12 @@
 
 #import "AFConnectionManager.h"
 
+@interface AFConnectionManager ()
+
+@property (strong, nonatomic) AFHTTPSessionManager *sessionManager;
+
+@end
+
 @implementation AFConnectionManager
 
 - (id)init
@@ -64,14 +70,14 @@
 - (void)callServiceWithRequestType:(taskType)requestType method:(serviceMethod)method params:(NSMutableDictionary *)params urlEndPoint:(NSString *)endPoint responseFormat:(responseType)responseFormat
 {
     //any response format including plist
-    AFHTTPSessionManager *manager = [self sessionManagerForResponseFormat:responseFormat requestType:requestType];
+    _sessionManager = [self sessionManagerForResponseFormat:responseFormat requestType:requestType];
     
     //change base url on case basis, if need be
     
     switch (method) {
         case METHOD_GET:
         {
-            [manager GET:endPoint parameters:params success:^(NSURLSessionDataTask *task, id responseObject) {
+            [_sessionManager GET:endPoint parameters:params success:^(NSURLSessionDataTask *task, id responseObject) {
                 [self requestFinishedWithResponse:responseObject requestType:requestType];
             } failure:^(NSURLSessionDataTask *task, NSError *error) {
                 [self requestFailedWithError:error requestType:requestType];
@@ -81,7 +87,7 @@
             
         case METHOD_POST:
         {
-            [manager POST:endPoint parameters:params success:^(NSURLSessionDataTask *task, id responseObject) {
+            [_sessionManager POST:endPoint parameters:params success:^(NSURLSessionDataTask *task, id responseObject) {
                 [self requestFinishedWithResponse:responseObject requestType:requestType];
             } failure:^(NSURLSessionDataTask *task, NSError *error) {
                 [self requestFailedWithError:error requestType:requestType];
@@ -91,7 +97,7 @@
             
         case METHOD_DELETE:
         {
-            [manager DELETE:endPoint parameters:params success:^(NSURLSessionDataTask *task, id responseObject) {
+            [_sessionManager DELETE:endPoint parameters:params success:^(NSURLSessionDataTask *task, id responseObject) {
                 [self requestFinishedWithResponse:responseObject requestType:requestType];
             } failure:^(NSURLSessionDataTask *task, NSError *error) {
                 [self requestFailedWithError:error requestType:requestType];
@@ -101,7 +107,7 @@
             
         case METHOD_PATCH:
         {
-            [manager PATCH:endPoint parameters:params success:^(NSURLSessionDataTask *task, id responseObject) {
+            [_sessionManager PATCH:endPoint parameters:params success:^(NSURLSessionDataTask *task, id responseObject) {
                 [self requestFinishedWithResponse:responseObject requestType:requestType];
             } failure:^(NSURLSessionDataTask *task, NSError *error) {
                 [self requestFailedWithError:error requestType:requestType];
@@ -111,14 +117,14 @@
             
         case METHOD_PUT:
         {
-            [manager PUT:endPoint parameters:params success:^(NSURLSessionDataTask *task, id responseObject) {
+            [_sessionManager PUT:endPoint parameters:params success:^(NSURLSessionDataTask *task, id responseObject) {
                 [self requestFinishedWithResponse:responseObject requestType:requestType];
             } failure:^(NSURLSessionDataTask *task, NSError *error) {
                 [self requestFailedWithError:error requestType:requestType];
             }];
             break;
         }
-        
+            
         default:
             break;
     }
@@ -133,21 +139,20 @@
 
 -(void)uploadPhoto:(UIImage*)image urlEndPoint:(NSString*)endPoint requestType:(taskType)requestType params:(NSMutableDictionary*)parameters imageKey:(NSString*)imageKey responseFormat:(responseType)responseFormat
 {
-    AFHTTPSessionManager *manager = [self sessionManagerForResponseFormat:responseFormat requestType:requestType];
-    manager.responseSerializer.acceptableContentTypes = [manager.responseSerializer.acceptableContentTypes setByAddingObject:@"text/html"];
+    _sessionManager = [self sessionManagerForResponseFormat:responseFormat requestType:requestType];
+    _sessionManager.responseSerializer.acceptableContentTypes = [_sessionManager.responseSerializer.acceptableContentTypes setByAddingObject:@"text/html"];
     
     NSData *imageData = UIImageJPEGRepresentation(image, 1);
     NSInteger imageSize = imageData.length;
     
-    //focus and resize your image before applying compression. Resizing should be as per the view where you want to display your image.
     //limit image size to 100 kb
     float maxSize = 100000; //100 kb
     if (imageSize > maxSize) {
         float compressionFactor = maxSize/imageSize;
         imageData = (UIImageJPEGRepresentation(image, compressionFactor));
     }
-
-    [manager POST:endPoint parameters:parameters constructingBodyWithBlock:^(id<AFMultipartFormData> formData) {
+    
+    [_sessionManager POST:endPoint parameters:parameters constructingBodyWithBlock:^(id<AFMultipartFormData> formData) {
         //do not put image inside parameters dictionary as I did, but append it!
         [formData appendPartWithFileData:imageData name:imageKey fileName:@"image" mimeType:@"image/jpeg"];
     } success:^(NSURLSessionDataTask *task, id responseObject) {
@@ -183,9 +188,15 @@
     [operation start];
 }
 
+#pragma mark - cancel request
+
+- (void)cancelAllRequests
+{
+    [_sessionManager.operationQueue cancelAllOperations];
+}
+
 #pragma mark - delegates
 
-//you will recieve NSXMLParser for xml response format
 - (void)requestFinishedWithResponse:(id)response requestType:(taskType)requestType
 {
     NSMutableDictionary *responseDict = [[NSMutableDictionary alloc]init];

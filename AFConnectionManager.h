@@ -62,6 +62,9 @@ typedef enum {
 
 - (void)getContentOfUrl:(NSString*)url requestType:(taskType)requestType responseFormat:(responseType)responseFormat;
 
+//cancel requests
+- (void)cancelAllRequests;
+
 @property (strong, nonatomic) id<AFConnectionDelegate> delegate;
 
 @end

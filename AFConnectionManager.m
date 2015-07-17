@@ -209,6 +209,9 @@
 
 - (void)requestFailedWithError:(NSError*)error requestType:(taskType)requestType
 {
+    NSString *response = error.userInfo[AFNetworkingOperationFailingURLResponseErrorKey];
+    NSLog(@"response: %@", response);
+    
     NSMutableDictionary *errorDict = [[NSMutableDictionary alloc]init];
     [errorDict setObject:error forKey:kError];
     NSNumber *tag = [NSNumber numberWithInt:requestType];

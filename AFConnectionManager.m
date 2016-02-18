@@ -7,7 +7,6 @@
 
 #import "AFConnectionManager.h"
 #import "UIImage+ImageManipulations.h"
-#import "AFHTTPRequestOperation.h"
 
 @interface AFConnectionManager ()
 
